@@ -445,12 +445,14 @@ export function LocationEmulationTool({
               }
             }}
             onPinned={(lat: number, lng: number) => {
-              // The pin is the new "where the user was before the next
-              // trail" — record it for session-origin capture, and drop any
-              // previously captured origin so the next play picks up fresh
-              // (otherwise stopping would restore the *pre-pin* location).
-              lastPinnedRef.current = { lat, lng };
-              sessionOriginRef.current = null;
+              // The pin is the new "where the user was before any trail."
+              // Record it as both the last-pinned location AND the active
+              // session origin, so a subsequent Stop restores to this pin
+              // — including the case where the trail was already playing
+              // when the pin happened (the prior origin would be stale).
+              const pin = { lat, lng };
+              lastPinnedRef.current = pin;
+              sessionOriginRef.current = pin;
             }}
           />
 
