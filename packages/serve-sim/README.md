@@ -40,6 +40,8 @@ serve-sim [device...]                 Start preview server (default: localhost:3
 serve-sim --no-preview [device...]    Stream in foreground without a preview server
 serve-sim gesture '<json>' [-d udid]  Send a touch gesture
 serve-sim button [name] [-d udid]     Send a button press (default: home)
+serve-sim type <text> [-d udid]       Type text via the simulator keyboard
+                                      (US keyboard only; also --stdin / --file <path>)
 serve-sim rotate <orientation> [-d udid]
                                       portrait | portrait_upside_down |
                                       landscape_left | landscape_right
@@ -87,6 +89,11 @@ serve-sim "iPhone 16 Pro"              # target a specific device
 serve-sim --detach                     # start a background helper, return JSON
 serve-sim --list                       # show running streams
 serve-sim --kill                       # stop all helpers
+
+# Type text into the focused field
+serve-sim type "Hello, world!"
+echo "from stdin" | serve-sim type --stdin
+serve-sim type --file ./snippet.txt
 
 # Camera injection
 serve-sim camera com.acme.MyApp                            # animated placeholder
