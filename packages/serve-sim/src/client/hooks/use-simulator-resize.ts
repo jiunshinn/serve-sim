@@ -20,6 +20,7 @@ import {
   clampSimulatorFrameWidth,
   estimateReleaseVelocity,
   getSimulatorFrameMaxWidth,
+  restoredSimulatorFrameWidth,
   roundToDevicePixel,
   rubberBandResistance,
   snapToDetent,
@@ -57,20 +58,29 @@ export function useSimulatorResize({
   const rafRef = useRef<number | null>(null);
   const tweenCancelRef = useRef<(() => void) | null>(null);
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastWidthRef = useRef<number | null>(null);
   const handleRef = useRef<HTMLDivElement | null>(null);
 
-  const initialWidth = useMemo(() => {
+  const readRestoredWidth = useCallback(() => {
     if (typeof window === "undefined") return defaultWidth;
+    // A non-finite scale (storage threw / empty / NaN) falls back to defaultWidth
+    // inside restoredSimulatorFrameWidth, so both paths share one call.
+    let scale = NaN;
     try {
       const raw = window.localStorage.getItem(SIMULATOR_RESIZE_SCALE_STORAGE_KEY);
-      const scale = raw != null ? Number(raw) : NaN;
-      return Number.isFinite(scale) ? defaultWidth * scale : defaultWidth;
-    } catch {
-      return defaultWidth;
-    }
-  }, [defaultWidth]);
+      scale = raw != null ? Number(raw) : NaN;
+    } catch {}
+    return restoredSimulatorFrameWidth(
+      defaultWidth,
+      viewportWidth,
+      viewportHeight,
+      aspectRatio,
+      scale,
+    );
+  }, [aspectRatio, defaultWidth, viewportHeight, viewportWidth]);
+  const initialWidth = useMemo(() => readRestoredWidth(), [readRestoredWidth]);
   const [frameWidth, setFrameWidth] = useState<number | null>(initialWidth);
+  const lastWidthRef = useRef<number | null>(initialWidth);
+  const restoredDefaultWidthRef = useRef(defaultWidth);
 
   const maxWidth = getSimulatorFrameMaxWidth(defaultWidth, viewportWidth, viewportHeight, aspectRatio);
   const minWidth = Math.min(SIMULATOR_RESIZE_MIN_WIDTH, maxWidth);
@@ -125,8 +135,10 @@ export function useSimulatorResize({
   }, [aspectRatio, defaultWidth, isInertia, isResizing, viewportHeight, viewportWidth, writeWidth]);
 
   useEffect(() => {
-    writeWidth(initialWidth);
-  }, [initialWidth, writeWidth]);
+    if (restoredDefaultWidthRef.current === defaultWidth) return;
+    restoredDefaultWidthRef.current = defaultWidth;
+    writeWidth(readRestoredWidth());
+  }, [defaultWidth, readRestoredWidth, writeWidth]);
 
   useEffect(() => {
     if (!isResizing && !isInertia) return;
