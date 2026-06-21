@@ -37,6 +37,8 @@ final class ClientManager {
     var onMemoryWarning: (() -> Void)?
     var onDigitalCrown: ((DigitalCrownEventPayload) -> Void)?
     var onScroll: ((ScrollEventPayload) -> Void)?
+    /// Toggle the on-screen software keyboard (⌘K), mirroring Simulator.app.
+    var onToggleSoftwareKeyboard: (() -> Void)?
 
     // MARK: - Configuration
 
@@ -250,6 +252,8 @@ final class ClientManager {
         } else if type == 0x0B { // WS_MSG_SCROLL
             guard let json = try? JSONDecoder().decode(ScrollEventPayload.self, from: data[1...]) else { return }
             onScroll?(json)
+        } else if type == 0x0C { // WS_MSG_TOGGLE_SOFTWARE_KEYBOARD
+            onToggleSoftwareKeyboard?()
         }
     }
 
